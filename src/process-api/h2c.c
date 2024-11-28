@@ -4,9 +4,9 @@
 #include <fcntl.h>
 #include <string.h>
 
-
-// This program will cause a lot of interleaving between the parent and child processes
-// If you want to see the output without interleaving, write the strings in one go instead of character by character
+// This program will probably not cause interleaving of i/o between the parent and child processes
+// Even if it does, the whole string will be written at once so the output will be more readable
+// If you want to see other variations of this output, checkout h2a.c or h2b.c
 int main(int argc, char *argv[])
 {
     int fd = open("file.txt", O_WRONLY | O_CREAT | O_TRUNC);
@@ -25,27 +25,21 @@ int main(int argc, char *argv[])
     else if (rc == 0)
     {
         printf("Hello, I am child (pid: %d)\n", (int)getpid());
+        char *child_str = "Child process\n";
         for (int i = 0; i < 30; i++)
         {
-            char *child_str = "Child ";
-            for (size_t j = 0; j < strlen(child_str); j++)
-            {
-                write(fd, &child_str[j], 1);
-            }
-            write(fd, "\n", 1);
+            write(fd, child_str, strlen(child_str));
+            fsync(fd);
         }
     }
     else
     {
         printf("Hello, I am parent of %d (pid: %d)\n", rc, (int)getpid());
+        char *child_str = "Parent process\n";
         for (int i = 0; i < 30; i++)
         {
-            char *child_str = "Parent ";
-            for (size_t j = 0; j < strlen(child_str); j++)
-            {
-                write(fd, &child_str[j], 1);
-            }
-            write(fd, "\n", 1);
+            write(fd, child_str, strlen(child_str));
+            fsync(fd);
         }
     }
     close(fd);
